@@ -1,8 +1,3 @@
-/*
-Direct Syntax Interpreter
-*/
-
-
 #pragma once
 
 #include <iostream>
@@ -12,31 +7,39 @@ Direct Syntax Interpreter
 #include <vector>
 #include <stack>
 
+#include "Debug.h"
 #include "Templates.h"
 #include "Execeptions.h"
 #include "Token.h"
 #include "Lexer.h"
+#include "AST.h"
 
-/*
-MACRO
-*/
-#define DEBUG 1
-
-#ifdef DEBUG 
-#define DEBUG_MSG(x) std::cerr << x << std::endl;
-#else 
-#define DEBUG_MSG(x)
-#endif
-
-class Interpreter
+class Parser
 {
 public:
-	Interpreter() {};
-	explicit Interpreter(std::string text) : m_text(text)
+	Parser():m_pAST(nullptr) {};
+	explicit Parser(std::string text) : m_text(text), m_pAST(nullptr)
 	{
 	}
-	virtual ~Interpreter() {};
+	virtual ~Parser()
+	{
+		if (m_pAST)
+			delete m_pAST;
+	}
+	void Reset()
+	{
+		if (m_pAST)
+			delete m_pAST;
+		m_pAST = nullptr;
+		m_text = "\0";
+	}
+	void SetText(std::string text)
+	{
+		m_text = text;
+	}
 
+
+protected:
 	/*
 	Funtionality: helper function to throw exception with a specific message
 	*/
@@ -45,10 +48,15 @@ public:
 		throw E::InterpreterExecption(msg);
 	}
 
+	inline void PtrError(void* ptr,const std::string& msg)
+	{
+		if (!ptr)
+			throw E::InterpreterExecption(msg);
+	}
+
 	/*
 	Token related helper functions
 	*/
-public:
 
 	/*
 	Functionality: Simply call GetNextToken
@@ -66,7 +74,7 @@ public:
 	*/
 	bool ConsumeTokenType(std::string type)
 	{
-		
+
 		if (m_CurrentToken.GetType() == type)
 		{
 			m_CurrentToken = m_lexer.GetNextToken();
@@ -79,70 +87,42 @@ public:
 	}
 
 	/*
-	Functionality: express a basic interger binary operation
-	Return: calculated result in string type
-	*/
-	Token exprBinaryIntOp(const Token& left, const Token& right, const Token& op)
-	{
-		int _left = std::stoi(left.GetValue());
-		int _right = std::stoi(right.GetValue());
-
-		switch (GetEnumIntOp(op.GetType()))
-		{
-		case ePLUS:
-			return Token(INTEGER, T::Str(_left + _right));
-		case eMINUS:
-			return Token(INTEGER, T::Str(_left - _right));
-		case eMULTIPLY:
-			return Token(INTEGER, T::Str(_left * _right));
-		case eDIVIDE:
-			if (_right != 0)
-			{
-				return Token(INTEGER, T::Str(_left / _right));
-			}
-			else
-			{
-				Error("SyntaxError: Integer division by zero.");
-			}
-		default:
-			Error("SyntaxError: " + op.ToString() + " is an UNKNOWN integer operation.\n");
-		}
-	}
-
-	/*
 		1st level of the Int Op expression:
 		Handles integer/paratheses
 	*/
-	Token GetFactor()
+	const AST* GetFactor()
 	{
-		Token result = m_CurrentToken;
 		Token token = m_CurrentToken;
 		std::string token_code[3] = { INTEGER, LEFT_PARATHESES, RIGHT_PARATHESES };
 
 		if (token.GetType() == token_code[0])
 		{
 			ConsumeTokenType(token_code[0]);
+			return (const AST*)new AST(token);
 		}
 		else if (token.GetType() == token_code[1])
 		{
 			ConsumeTokenType(token_code[1]);
-			result = GetExpr();
+			const AST* result2 = GetExpr();
+			m_pAST = result2;
 			ConsumeTokenType(token_code[2]);
+			return result2;
 		}
 		else
 		{
 			Error("SynatxError: invalid syntax.");
 		}
-		return result;
 	}
 
 	/*
 		2nd level of the Int Op expression:
 		Handles integer mul/div
 	*/
-	Token GetTerm()
+	const AST* GetTerm()
 	{
-		Token result = GetFactor();
+		const AST* temp = nullptr;
+		const AST* result = GetFactor();
+		m_pAST = result;
 		std::string token_code[2] = { MUL, DIV };
 
 		while ((m_CurrentToken.GetType() == token_code[0]) ||
@@ -152,12 +132,16 @@ public:
 			if (token.GetType() == token_code[0])
 			{
 				ConsumeTokenType(token_code[0]);
-				result = exprBinaryIntOp(result, GetFactor(), token);
+				temp = GetFactor();
+				result = DEBUG_NEW BinOp_AST(result, temp, DEBUG_NEW AST(token));
+				m_pAST = result;
 			}
 			else if (token.GetType() == token_code[1])
 			{
 				ConsumeTokenType(token_code[1]);
-				result = exprBinaryIntOp(result, GetFactor(), token);
+				temp = GetFactor();
+				result = DEBUG_NEW BinOp_AST(result, temp, DEBUG_NEW AST(token));
+				m_pAST = result;
 			}
 		}
 		return result;
@@ -167,9 +151,11 @@ public:
 		3rd level of the Int Op expression:
 		Handles integer plus/minus
 	*/
-	Token GetExpr()
+	const AST* GetExpr()
 	{
-		Token result = GetTerm();
+		const AST* temp = nullptr;
+		const AST* result = GetTerm();
+		m_pAST = result;
 		std::string token_code[2] = { PLUS, MINUS };
 
 		while ((m_CurrentToken.GetType() == token_code[0]) ||
@@ -179,22 +165,27 @@ public:
 			if (token.GetType() == token_code[0])
 			{
 				ConsumeTokenType(token_code[0]);
-				result = exprBinaryIntOp(result, GetTerm(), token);
+				temp = GetTerm();
+				result = DEBUG_NEW BinOp_AST(result, temp, DEBUG_NEW AST(token));
+				m_pAST = result;
 			}
 			else if (token.GetType() == token_code[1])
 			{
 				ConsumeTokenType(token_code[1]);
-				result = exprBinaryIntOp(result, GetTerm(), token);
+				temp = GetTerm();
+				result = DEBUG_NEW BinOp_AST(result, temp, DEBUG_NEW AST(token));
+				m_pAST = result;
 			}
 		}
 		return result;
 	}
 
+public:
 	/*
 	Functionality: an combnination of parsing and interpreting
 	Return: algebraic result of the math expression
 	*/
-	std::string interpretIntOpStatement()
+	const AST* GetIntBinOpAST()
 	{
 		try
 		{
@@ -207,18 +198,18 @@ public:
 				m_text.insert(0, "0");
 				goto START;
 			}
-
-			return GetExpr().GetValue();
+			m_pAST = GetExpr();
+			return m_pAST;
 		}
 		catch (const E::InterpreterExecption& e)
 		{
 			std::cerr << e.what() << std::endl;
-			return "\0";
+			return nullptr;
 		}
 		catch (const std::exception& e)
 		{
 			std::cerr << e.what() << std::endl;
-			return "\0";
+			return nullptr;
 		}
 	}
 
@@ -226,5 +217,6 @@ private:
 	std::string m_text;
 	Lexer m_lexer;
 	Token m_CurrentToken;
+	const AST* m_pAST;
 };
 

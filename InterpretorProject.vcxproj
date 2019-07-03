@@ -154,10 +154,14 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AST.h" />
+    <ClInclude Include="Debug.h" />
     <ClInclude Include="Execeptions.h" />
     <ClInclude Include="Interpreter2.h" />
     <ClInclude Include="Interpreter3.h" />
     <ClInclude Include="Interpreter4.h" />
+    <ClInclude Include="Interpreter6.h" />
+    <ClInclude Include="Parser.h" />
     <ClInclude Include="Interpreter5.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="Templates.h" />

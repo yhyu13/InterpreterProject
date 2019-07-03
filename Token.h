@@ -7,7 +7,7 @@ Token class
 class Token
 {
 public:
-	Token() {};
+	Token(): m_type("Undefined"),m_value("\0") {};
 	explicit Token(std::string type, std::string value) : m_type(type), m_value(value) {};
 	virtual ~Token() {};
 
@@ -31,7 +31,6 @@ private:
 	std::string m_value;
 };
 
-#include <string>
 /*
 Token types
 */
