@@ -57,6 +57,9 @@
     <ClInclude Include="Interpreter5.h">
       <Filter>Header Files\Deprecated</Filter>
     </ClInclude>
+    <ClInclude Include="Interpreter7.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

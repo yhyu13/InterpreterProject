@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 
-#include "interpreter6.h"
+#include "interpreter7.h"
 
 int main()
 {
@@ -26,7 +26,7 @@ int main()
 			{
 				interp.Reset();
 				interp.SetText(line);
-				std::string output = interp.InterpretIntBinOp();
+				std::string output = interp.InterpretIntOp();
 				if (output != "\0")
 					std::cout << output << std::endl;
 			}

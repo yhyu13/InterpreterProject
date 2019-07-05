@@ -9,7 +9,6 @@ class AST
 public:
 	AST() {};
 	virtual ~AST() {};
-
 	explicit AST(Token token)
 		:
 		m_token(token),
@@ -29,6 +28,35 @@ private:
 	std::string m_value;
 };
 
+class UnaryOp_AST : public AST
+{
+public:
+	explicit UnaryOp_AST(Token op, const AST* expr)
+	{
+		m_op = op;
+		m_expr = expr;
+	}
+	~UnaryOp_AST()
+	{
+		if (m_expr)
+			delete m_expr;
+	}
+	const AST* GetExpr() const
+	{
+		return m_expr;
+	}
+	Token GetToken() const override
+	{
+		return m_op;
+	}
+	std::string ToString() const override
+	{
+		return m_op.GetValue();
+	}
+private:
+	Token m_op;
+	const AST* m_expr;
+};
 
 class BinOp_AST : public AST
 {
@@ -40,7 +68,6 @@ public:
 		m_op(op)
 	{
 	}
-
 	~BinOp_AST() override
 	{
 		if (m_left)
@@ -50,27 +77,22 @@ public:
 		if (m_op)
 			delete m_op;
 	}
-
 	const AST* GetLeft() const
 	{
 		return m_left;
 	}
-
 	const AST* GetRight() const
 	{
 		return m_right;
 	}
-
 	const AST* GetOp() const
 	{
 		return m_op;
 	}
-
 	Token GetToken() const override
 	{
 		return Token();
 	}
-
 	std::string ToString() const override
 	{
 		std::ostringstream oss;

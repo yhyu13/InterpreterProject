@@ -87,35 +87,44 @@ protected:
 	}
 
 	/*
-		1st level of the Int Op expression:
-		Handles integer/paratheses
+		1st level of the Int Op expression, highest precedence:
+		Handles integer/paratheses/unary operator.
 	*/
 	const AST* GetFactor()
 	{
 		Token token = m_CurrentToken;
-		std::string token_code[3] = { INTEGER, LEFT_PARATHESES, RIGHT_PARATHESES };
-
+		std::string token_code[5] = {INTEGER, LEFT_PARATHESES, RIGHT_PARATHESES, PLUS, MINUS};
+		// Handle integer
 		if (token.GetType() == token_code[0])
 		{
 			ConsumeTokenType(token_code[0]);
-			return (const AST*)new AST(token);
+			const AST* result = new AST(token);
+			return result;
 		}
+		// Handle paratheses
 		else if (token.GetType() == token_code[1])
 		{
 			ConsumeTokenType(token_code[1]);
-			const AST* result2 = GetExpr();
-			m_pAST = result2;
+			const AST* result = GetExpr();
+			m_pAST = result;
 			ConsumeTokenType(token_code[2]);
-			return result2;
+			return result;
+		}
+		// Handle unary operator
+		else if (token.GetType() == token_code[3] || token.GetType() == token_code[4])
+		{
+			ConsumeTokenType(token.GetType());
+			const AST* result = new UnaryOp_AST(token, GetFactor());
+			m_pAST = result;
+			return result;
 		}
 		else
 		{
 			Error("SynatxError: invalid syntax.");
 		}
 	}
-
 	/*
-		2nd level of the Int Op expression:
+		2nd level of the Int Op expression, middle precedence:
 		Handles integer mul/div
 	*/
 	const AST* GetTerm()
@@ -146,9 +155,8 @@ protected:
 		}
 		return result;
 	}
-
 	/*
-		3rd level of the Int Op expression:
+		3rd level of the Int Op expression, lowest precedence:
 		Handles integer plus/minus
 	*/
 	const AST* GetExpr()
@@ -182,35 +190,15 @@ protected:
 
 public:
 	/*
-	Functionality: an combnination of parsing and interpreting
-	Return: algebraic result of the math expression
-	*/
-	const AST* GetIntBinOpAST()
+Functionality: parse the input text into AST
+Return: pointer constant to the AST instance
+*/
+	const AST* GetIntOpAST()
 	{
-		try
-		{
-		START:
-			m_lexer = Lexer(m_text);
-			m_CurrentToken = m_lexer.GetNextToken();
-			// Special Case: Negative sign as the first token. Solved by adding an "0" at the begnining
-			if (m_CurrentToken.GetType() == MINUS)
-			{
-				m_text.insert(0, "0");
-				goto START;
-			}
-			m_pAST = GetExpr();
-			return m_pAST;
-		}
-		catch (const E::InterpreterExecption& e)
-		{
-			std::cerr << e.what() << std::endl;
-			return nullptr;
-		}
-		catch (const std::exception& e)
-		{
-			std::cerr << e.what() << std::endl;
-			return nullptr;
-		}
+		m_lexer = Lexer(m_text);
+		m_CurrentToken = m_lexer.GetNextToken();
+		m_pAST = GetExpr();
+		return m_pAST;
 	}
 
 private:

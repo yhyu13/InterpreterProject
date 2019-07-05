@@ -161,6 +161,7 @@
     <ClInclude Include="Interpreter3.h" />
     <ClInclude Include="Interpreter4.h" />
     <ClInclude Include="Interpreter6.h" />
+    <ClInclude Include="Interpreter7.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="Interpreter5.h" />
     <ClInclude Include="Lexer.h" />

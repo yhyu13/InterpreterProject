@@ -10,20 +10,25 @@ public:
 	Token(): m_type("Undefined"),m_value("\0") {};
 	explicit Token(std::string type, std::string value) : m_type(type), m_value(value) {};
 	virtual ~Token() {};
-
 	std::string ToString() const
 	{
 		return "Token( " + T::Str(m_type) + ", " + T::Str(m_value) + " )";
 	}
-
 	std::string GetType() const
 	{
 		return m_type;
 	}
-
 	std::string GetValue() const
 	{
 		return m_value;
+	}
+	void SetType(std::string type)
+	{
+		m_type = type;
+	}
+	void SetValue(std::string value)
+	{
+		m_value = value;
 	}
 
 private:
